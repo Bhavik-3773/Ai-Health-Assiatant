@@ -9,6 +9,9 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: sqlite:///./test.db
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
     defaults:
       run:
         working-directory: backend
