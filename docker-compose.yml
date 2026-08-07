@@ -1,0 +1,78 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: health_user
+      POSTGRES_PASSWORD: health_pass
+      POSTGRES_DB: health_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U health_user -d health_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://health_user:health_pass@db:5432/health_db
+      SECRET_KEY: ${SECRET_KEY:-CHANGE_ME_IN_PRODUCTION}
+      CORS_ORIGINS: '["http://localhost:3000", "http://127.0.0.1:3000"]'
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+  mqtt-bridge:
+    build:
+      context: .
+      dockerfile: docker/mqtt-bridge.Dockerfile
+    restart: unless-stopped
+    environment:
+      MQTT_BROKER: mqtt-broker
+      BACKEND_INTERNAL_URL: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+      mqtt-broker:
+        condition: service_started
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

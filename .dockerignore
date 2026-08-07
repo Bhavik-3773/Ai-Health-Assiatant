@@ -1,0 +1,24 @@
+# Version control
+.git
+.gitignore
+
+# Python
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+backend/tests/test.db
+
+# Node / Next.js
+**/node_modules
+**/.next
+frontend/.env.local
+
+# Env files (baked in via compose environment/build-args instead)
+**/.env
+!backend/.env.example
+!frontend/.env.local.example
+
+# Misc
+**/.DS_Store
+docs/*.draft
