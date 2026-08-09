@@ -21,6 +21,10 @@ export async function login(payload: LoginPayload) {
   return data;
 }
 
+export function logout() {
+  localStorage.removeItem("access_token");
+}
+
 export async function signup(payload: SignupPayload) {
   const { data } = await api.post("/api/auth/signup", payload);
   localStorage.setItem("access_token", data.access_token);

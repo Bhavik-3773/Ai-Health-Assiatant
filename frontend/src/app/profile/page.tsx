@@ -28,6 +28,7 @@ import {
   updateMyPatientProfile,
   updateMyName,
   uploadProfilePhoto,
+  logout,
   type PatientProfile,
 } from "@/lib/api";
 
@@ -235,9 +236,12 @@ export default function ProfilePage() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-      <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 mb-6">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-      </Link>
+  <Link
+    href="/dashboard"
+    className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800"
+  >
+    <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+  </Link>
 
       {serverError && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -432,6 +436,20 @@ export default function ProfilePage() {
             </button>
           </div>
         )}
+
+<div className="mt-10 flex justify-center">
+  <button
+    type="button"
+    onClick={() => {
+      logout();
+      router.push("/login");
+    }}
+    className="px-6 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50"
+  >
+    Logout
+  </button>
+</div>
+
       </form>
 
       <style jsx global>{`
