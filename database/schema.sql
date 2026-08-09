@@ -28,6 +28,12 @@ CREATE TABLE patients (
     weight_kg NUMERIC(5,2),
     doctor_id UUID REFERENCES users(id),
     device_id VARCHAR(100) UNIQUE,
+    phone_number VARCHAR(20),
+    blood_group VARCHAR(5) CHECK (blood_group IS NULL OR blood_group IN ('A+','A-','B+','B-','AB+','AB-','O+','O-')),
+    medical_history TEXT,
+    emergency_contact_name VARCHAR(255),
+    emergency_contact_phone VARCHAR(20),
+    photo_url VARCHAR(500),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export const api = axios.create({ baseURL: API_URL });
 
@@ -34,7 +34,7 @@ export async function getMe() {
 
 export async function getMyPatientProfile() {
   const { data } = await api.get("/api/patients/me");
-  return data;
+  return data as PatientProfile;
 }
 
 export async function getSensorHistory(patientId: string, limit = 50) {
@@ -50,4 +50,57 @@ export async function getPredictions(patientId: string, limit = 20) {
 export async function getRecommendations(patientId: string, limit = 20) {
   const { data } = await api.get(`/api/recommendations/${patientId}`, { params: { limit } });
   return data;
+}
+
+// ---------- Patient Profile ----------
+
+export type PatientProfile = {
+  id: string;
+  user_id: string;
+  date_of_birth: string | null;
+  age: number | null;
+  gender: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  device_id: string | null;
+  phone_number: string | null;
+  blood_group: string | null;
+  medical_history: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  photo_url: string | null;
+};
+
+export type PatientProfileUpdate = Partial<
+  Pick<
+    PatientProfile,
+    | "date_of_birth"
+    | "gender"
+    | "height_cm"
+    | "weight_kg"
+    | "phone_number"
+    | "blood_group"
+    | "medical_history"
+    | "emergency_contact_name"
+    | "emergency_contact_phone"
+  >
+>;
+
+export async function updateMyPatientProfile(payload: PatientProfileUpdate) {
+  const { data } = await api.put("/api/patients/me", payload);
+  return data as PatientProfile;
+}
+
+export async function updateMyName(full_name: string) {
+  const { data } = await api.put("/api/auth/me", { full_name });
+  return data;
+}
+
+export async function uploadProfilePhoto(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post("/api/patients/me/photo", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data as PatientProfile;
 }

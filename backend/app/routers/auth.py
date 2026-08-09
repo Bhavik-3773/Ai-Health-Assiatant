@@ -6,7 +6,7 @@ from app.core.security import verify_password, get_password_hash, create_access_
 from app.core.limiter import limiter
 from app.models.user import User, UserRole
 from app.models.health import Patient, Doctor
-from app.schemas.schemas import UserCreate, UserLogin, UserOut, Token
+from app.schemas.schemas import UserCreate, UserLogin, UserOut, UserUpdate, Token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -58,4 +58,18 @@ def login(request: Request, payload: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.put("/me", response_model=UserOut)
+def update_me(
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Updates full_name only. Email is the login identifier for the
+    existing JWT auth system and is intentionally not editable here."""
+    current_user.full_name = payload.full_name
+    db.commit()
+    db.refresh(current_user)
     return current_user

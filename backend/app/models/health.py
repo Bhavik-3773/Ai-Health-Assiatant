@@ -19,6 +19,12 @@ class Patient(Base):
     weight_kg = Column(Numeric(5, 2))
     doctor_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     device_id = Column(String(100), unique=True)
+    phone_number = Column(String(20))
+    blood_group = Column(String(5))
+    medical_history = Column(Text)
+    emergency_contact_name = Column(String(255))
+    emergency_contact_phone = Column(String(20))
+    photo_url = Column(String(500))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     sensor_readings = relationship("SensorData", back_populates="patient", cascade="all, delete-orphan")

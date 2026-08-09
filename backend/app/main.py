@@ -1,9 +1,11 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -14,6 +16,13 @@ from app.routers import auth, patients, sensors, predictions
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("health_assistant")
+
+# Local static file storage — currently used for patient profile photo
+# uploads (see routers/patients.py). Note: this is ephemeral inside a
+# Docker container unless a volume is mounted onto this path; fine as-is
+# for local/non-Docker dev, where it persists normally on disk.
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+(STATIC_DIR / "avatars").mkdir(parents=True, exist_ok=True)
 
 
 @asynccontextmanager
@@ -47,6 +56,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.exception_handler(Exception)

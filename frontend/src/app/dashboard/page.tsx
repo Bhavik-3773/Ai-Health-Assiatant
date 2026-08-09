@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { getMe, getMyPatientProfile, getSensorHistory, getPredictions, getRecommendations } from "@/lib/api";
 
@@ -47,7 +48,15 @@ export default function DashboardPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-bold mb-8">Your Health Dashboard</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">Your Health Dashboard</h1>
+        <Link
+          href="/profile"
+          className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
+        >
+          My Profile
+        </Link>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
         <MetricCard label="Heart Rate" value={latest?.heart_rate ?? "--"} unit="bpm" />
