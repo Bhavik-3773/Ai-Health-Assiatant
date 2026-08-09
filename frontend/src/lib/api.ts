@@ -21,10 +21,6 @@ export async function login(payload: LoginPayload) {
   return data;
 }
 
-export function logout() {
-  localStorage.removeItem("access_token");
-}
-
 export async function signup(payload: SignupPayload) {
   const { data } = await api.post("/api/auth/signup", payload);
   localStorage.setItem("access_token", data.access_token);
@@ -107,4 +103,51 @@ export async function uploadProfilePhoto(file: File) {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data as PatientProfile;
+}
+
+// ---------- Sensor History ----------
+
+export type SensorReading = {
+  id: number;
+  patient_id: string;
+  heart_rate: number | null;
+  spo2: number | null;
+  temperature: number | null;
+  steps: number | null;
+  calories: number | null;
+  sleep_hours: number | null;
+  water_intake_ml: number | null;
+  activity_state: string | null;
+  recorded_at: string;
+};
+
+export type TimeRange = "24h" | "7d" | "30d";
+
+export type SensorHistoryParams = {
+  limit?: number;
+  offset?: number;
+  range?: TimeRange;
+  date?: string; // YYYY-MM-DD
+};
+
+export type SensorHistoryPage = {
+  data: SensorReading[];
+  total: number;
+};
+
+/**
+ * Same GET /api/sensors/{patient_id} endpoint as getSensorHistory() above,
+ * with the added range/date filters and total count read back from the
+ * X-Total-Count response header. Kept as a separate function rather than
+ * changing getSensorHistory()'s signature/return shape, since that one is
+ * already used by the dashboard and expects a plain array back.
+ */
+export async function getSensorHistoryPage(
+  patientId: string,
+  params: SensorHistoryParams = {}
+): Promise<SensorHistoryPage> {
+  const response = await api.get(`/api/sensors/${patientId}`, { params });
+  const totalHeader = response.headers["x-total-count"];
+  const total = totalHeader !== undefined ? Number(totalHeader) : response.data.length;
+  return { data: response.data as SensorReading[], total };
 }

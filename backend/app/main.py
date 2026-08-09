@@ -55,6 +55,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # allow_headers governs REQUEST headers; without expose_headers the
+    # browser silently hides custom RESPONSE headers from JS even though
+    # they're present on the wire. Needed for the Sensor History page's
+    # pagination (X-Total-Count).
+    expose_headers=["X-Total-Count"],
 )
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

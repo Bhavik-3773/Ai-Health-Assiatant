@@ -1,6 +1,7 @@
+from datetime import date, datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -14,6 +15,12 @@ from app.ml.predictor import predict_health_state
 from app.ml.recommender import generate_recommendations
 
 router = APIRouter(prefix="/api/sensors", tags=["sensors"])
+
+VALID_RANGES = {
+    "24h": timedelta(hours=24),
+    "7d": timedelta(days=7),
+    "30d": timedelta(days=30),
+}
 
 
 class ConnectionManager:
@@ -107,12 +114,38 @@ def _run_prediction_pipeline(db: Session, patient: Patient, reading: SensorData)
 @router.get("/{patient_id}", response_model=List[SensorDataOut])
 def get_sensor_history(
     patient_id: str,
+    response: Response,
     limit: int = Query(default=100, le=1000),
     offset: int = 0,
+    time_range: Optional[str] = Query(
+        default=None, alias="range", description="Relative time window: 24h, 7d, or 30d"
+    ),
+    on_date: Optional[date] = Query(
+        default=None, alias="date", description="Filter to one calendar day (YYYY-MM-DD). Takes precedence over range."
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = db.query(SensorData).filter(SensorData.patient_id == patient_id).order_by(desc(SensorData.recorded_at))
+    query = db.query(SensorData).filter(SensorData.patient_id == patient_id)
+
+    if on_date is not None:
+        start = datetime.combine(on_date, datetime.min.time())
+        end = start + timedelta(days=1)
+        query = query.filter(SensorData.recorded_at >= start, SensorData.recorded_at < end)
+    elif time_range is not None:
+        delta = VALID_RANGES.get(time_range)
+        if delta is None:
+            raise HTTPException(status_code=400, detail="range must be one of: 24h, 7d, 30d")
+        cutoff = datetime.utcnow() - delta
+        query = query.filter(SensorData.recorded_at >= cutoff)
+
+    query = query.order_by(desc(SensorData.recorded_at))
+
+    # Exposed via CORS (see main.py) so the frontend can build real page
+    # numbers instead of a "load more" pattern. Body shape is unchanged —
+    # existing callers (e.g. the dashboard) keep working exactly as before.
+    response.headers["X-Total-Count"] = str(query.count())
+
     return query.offset(offset).limit(limit).all()
 
 
