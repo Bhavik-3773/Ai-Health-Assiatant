@@ -27,6 +27,10 @@ export async function signup(payload: SignupPayload) {
   return data;
 }
 
+ export function logout() {
+  localStorage.removeItem("access_token");
+}
+
 export async function getMe() {
   const { data } = await api.get("/api/auth/me");
   return data;
