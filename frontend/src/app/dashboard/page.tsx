@@ -58,6 +58,12 @@ export default function DashboardPage() {
             History
           </Link>
           <Link
+            href="/prediction"
+            className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
+          >
+            Prediction
+          </Link>
+          <Link
             href="/profile"
             className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
           >

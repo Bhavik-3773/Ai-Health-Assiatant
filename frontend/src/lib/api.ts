@@ -46,8 +46,8 @@ export async function getSensorHistory(patientId: string, limit = 50) {
   return data;
 }
 
-export async function getPredictions(patientId: string, limit = 20) {
-  const { data } = await api.get(`/api/predictions/${patientId}`, { params: { limit } });
+export async function getPredictions(patientId: string, limit = 20, offset = 0): Promise<Prediction[]> {
+  const { data } = await api.get(`/api/predictions/${patientId}`, { params: { limit, offset } });
   return data;
 }
 
@@ -155,3 +155,14 @@ export async function getSensorHistoryPage(
   const total = totalHeader !== undefined ? Number(totalHeader) : response.data.length;
   return { data: response.data as SensorReading[], total };
 }
+
+// ---------- AI Prediction ----------
+
+export type Prediction = {
+  id: number;
+  patient_id: string;
+  label: string;
+  probability: number;
+  explanation: string | null;
+  created_at: string;
+};
