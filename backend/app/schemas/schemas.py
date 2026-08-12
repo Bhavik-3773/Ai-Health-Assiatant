@@ -164,3 +164,22 @@ class RecommendationOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ---------- Notifications ----------
+# NEW: added to bring GET /api/notifications in line with the response_model
+# convention already used by every other router (PredictionOut, RecommendationOut,
+# SensorDataOut, etc.). Mirrors the existing `notifications` table exactly —
+# no new columns, no schema change.
+
+class NotificationOut(BaseModel):
+    id: int
+    user_id: uuid.UUID
+    type: str
+    title: str
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

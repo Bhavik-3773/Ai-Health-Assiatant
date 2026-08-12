@@ -80,40 +80,31 @@ export type PatientProfile = {
 };
 
 export type PatientProfileUpdate = Partial<
-  Pick<
-    PatientProfile,
-    | "date_of_birth"
-    | "gender"
-    | "height_cm"
-    | "weight_kg"
-    | "phone_number"
-    | "blood_group"
-    | "medical_history"
-    | "emergency_contact_name"
-    | "emergency_contact_phone"
-  >
+  Omit<PatientProfile, "id" | "user_id" | "age" | "photo_url">
 >;
 
-export async function updateMyPatientProfile(payload: PatientProfileUpdate) {
+export async function updateMyPatientProfile(payload: PatientProfileUpdate): Promise<PatientProfile> {
   const { data } = await api.put("/api/patients/me", payload);
-  return data as PatientProfile;
-}
-
-export async function updateMyName(full_name: string) {
-  const { data } = await api.put("/api/auth/me", { full_name });
   return data;
 }
 
-export async function uploadProfilePhoto(file: File) {
+export async function uploadMyPatientPhoto(file: File): Promise<PatientProfile> {
   const formData = new FormData();
   formData.append("file", file);
   const { data } = await api.post("/api/patients/me/photo", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return data as PatientProfile;
+  return data;
 }
 
-// ---------- Sensor History ----------
+export async function getSensorHistoryPage(
+  patientId: string,
+  params: { limit?: number; offset?: number; range?: "24h" | "7d" | "30d"; date?: string }
+) {
+  const response = await api.get(`/api/sensors/${patientId}`, { params });
+  const total = Number(response.headers["x-total-count"] ?? response.data.length);
+  return { data: response.data as SensorReading[], total };
+}
 
 export type SensorReading = {
   id: number;
@@ -128,37 +119,6 @@ export type SensorReading = {
   activity_state: string | null;
   recorded_at: string;
 };
-
-export type TimeRange = "24h" | "7d" | "30d";
-
-export type SensorHistoryParams = {
-  limit?: number;
-  offset?: number;
-  range?: TimeRange;
-  date?: string; // YYYY-MM-DD
-};
-
-export type SensorHistoryPage = {
-  data: SensorReading[];
-  total: number;
-};
-
-/**
- * Same GET /api/sensors/{patient_id} endpoint as getSensorHistory() above,
- * with the added range/date filters and total count read back from the
- * X-Total-Count response header. Kept as a separate function rather than
- * changing getSensorHistory()'s signature/return shape, since that one is
- * already used by the dashboard and expects a plain array back.
- */
-export async function getSensorHistoryPage(
-  patientId: string,
-  params: SensorHistoryParams = {}
-): Promise<SensorHistoryPage> {
-  const response = await api.get(`/api/sensors/${patientId}`, { params });
-  const totalHeader = response.headers["x-total-count"];
-  const total = totalHeader !== undefined ? Number(totalHeader) : response.data.length;
-  return { data: response.data as SensorReading[], total };
-}
 
 // ---------- AI Prediction ----------
 
@@ -180,3 +140,32 @@ export type Recommendation = {
   body: string;
   created_at: string;
 };
+
+// ---------- Notifications ----------
+// NEW. Consumes the existing GET/POST endpoints plus the new DELETE
+// endpoint added to backend/app/routers/predictions.py.
+
+export type NotificationType = "emergency" | "info" | "reminder";
+
+export type NotificationItem = {
+  id: number;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
+export async function getNotifications(unreadOnly = false): Promise<NotificationItem[]> {
+  const { data } = await api.get("/api/notifications", { params: { unread_only: unreadOnly } });
+  return data;
+}
+
+export async function markNotificationRead(notificationId: number): Promise<void> {
+  await api.post(`/api/notifications/${notificationId}/read`);
+}
+
+export async function deleteNotification(notificationId: number): Promise<void> {
+  await api.delete(`/api/notifications/${notificationId}`);
+}

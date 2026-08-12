@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { getMe, getMyPatientProfile, getSensorHistory, getPredictions, getRecommendations } from "@/lib/api";
+import NotificationBell from "@/components/NotificationBell";
 
 type Reading = {
   recorded_at: string;
@@ -50,7 +51,8 @@ export default function DashboardPage() {
     <main className="max-w-6xl mx-auto px-6 py-10">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Your Health Dashboard</h1>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
+          <NotificationBell />
           <Link
             href="/history"
             className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"

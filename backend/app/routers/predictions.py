@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.health import Prediction, Recommendation, Notification
-from app.schemas.schemas import PredictionOut, RecommendationOut
+from app.schemas.schemas import PredictionOut, RecommendationOut, NotificationOut
 
 router = APIRouter(prefix="/api", tags=["predictions"])
 
@@ -49,7 +49,7 @@ def get_recommendations(
     )
 
 
-@router.get("/notifications")
+@router.get("/notifications", response_model=List[NotificationOut])
 def get_notifications(
     unread_only: bool = False,
     db: Session = Depends(get_db),
@@ -74,5 +74,27 @@ def mark_notification_read(
     )
     if notif:
         notif.is_read = True
+        db.commit()
+    return {"ok": True}
+
+
+@router.delete("/notifications/{notification_id}")
+def delete_notification(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # NEW endpoint — did not exist before. Mirrors mark_notification_read's
+    # lookup/ownership pattern exactly: scoped to current_user.id so a user
+    # can only delete their own notifications, and is a no-op (not a 404)
+    # if the id doesn't belong to them or no longer exists, consistent with
+    # the existing mark-as-read endpoint's style.
+    notif = (
+        db.query(Notification)
+        .filter(Notification.id == notification_id, Notification.user_id == current_user.id)
+        .first()
+    )
+    if notif:
+        db.delete(notif)
         db.commit()
     return {"ok": True}
