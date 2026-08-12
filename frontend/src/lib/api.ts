@@ -42,6 +42,10 @@ export async function updateMyName(full_name: string) {
   return data;
 }
 
+export async function changePassword(current_password: string, new_password: string): Promise<void> {
+  await api.post("/api/auth/change-password", { current_password, new_password });
+}
+
 export async function getMyPatientProfile() {
   const { data } = await api.get("/api/patients/me");
   return data as PatientProfile;
@@ -153,8 +157,6 @@ export type Recommendation = {
 };
 
 // ---------- Notifications ----------
-// NEW. Consumes the existing GET/POST endpoints plus the new DELETE
-// endpoint added to backend/app/routers/predictions.py.
 
 export type NotificationType = "emergency" | "info" | "reminder";
 
@@ -179,4 +181,32 @@ export async function markNotificationRead(notificationId: number): Promise<void
 
 export async function deleteNotification(notificationId: number): Promise<void> {
   await api.delete(`/api/notifications/${notificationId}`);
+}
+
+// ---------- Account Settings ----------
+// NEW. Consumes GET/PUT /api/settings/me (routers/settings.py). Dark Mode
+// is intentionally NOT here — it's applied directly via localStorage +
+// the <html> class in layout.tsx / settings/page.tsx, no API round-trip.
+
+export type UserSettingsData = {
+  user_id: string;
+  language: string;
+  notify_emergency: boolean;
+  notify_reminder: boolean;
+  notify_info: boolean;
+  updated_at: string;
+};
+
+export type UserSettingsUpdate = Partial<
+  Omit<UserSettingsData, "user_id" | "updated_at">
+>;
+
+export async function getMySettings(): Promise<UserSettingsData> {
+  const { data } = await api.get("/api/settings/me");
+  return data;
+}
+
+export async function updateMySettings(payload: UserSettingsUpdate): Promise<UserSettingsData> {
+  const { data } = await api.put("/api/settings/me", payload);
+  return data;
 }

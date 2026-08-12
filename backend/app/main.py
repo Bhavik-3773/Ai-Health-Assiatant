@@ -13,6 +13,10 @@ from app.core.config import settings
 from app.core.database import Base, engine
 from app.core.limiter import limiter
 from app.routers import auth, patients, sensors, predictions
+from app.routers import settings as settings_router  # aliased: `settings` is
+# already bound above to app.core.config's settings object — importing the
+# new router under the same name would silently shadow it and break every
+# settings.PROJECT_NAME / settings.CORS_ORIGINS reference below.
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("health_assistant")
@@ -77,6 +81,7 @@ app.include_router(auth.router)
 app.include_router(patients.router)
 app.include_router(sensors.router)
 app.include_router(predictions.router)
+app.include_router(settings_router.router)
 
 
 @app.get("/api/health")

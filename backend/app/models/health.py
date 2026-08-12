@@ -91,3 +91,19 @@ class Notification(Base):
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserSettings(Base):
+    """Account-level settings. One row per user, created lazily on first
+    access (see routers/settings.py) rather than at signup — keeps the
+    existing signup flow in auth.py completely untouched. Dark Mode is
+    deliberately NOT a column here: it's kept in the browser's localStorage
+    as a device display preference, not synced server-side."""
+    __tablename__ = "user_settings"
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    language = Column(String(10), nullable=False, default="en")
+    notify_emergency = Column(Boolean, nullable=False, default=True)
+    notify_reminder = Column(Boolean, nullable=False, default=True)
+    notify_info = Column(Boolean, nullable=False, default=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

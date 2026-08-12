@@ -6,7 +6,7 @@ from app.core.security import verify_password, get_password_hash, create_access_
 from app.core.limiter import limiter
 from app.models.user import User, UserRole
 from app.models.health import Patient, Doctor
-from app.schemas.schemas import UserCreate, UserLogin, UserOut, UserUpdate, Token
+from app.schemas.schemas import UserCreate, UserLogin, UserOut, UserUpdate, PasswordChange, Token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -73,3 +73,20 @@ def update_me(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.post("/change-password")
+def change_password(
+    payload: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """NEW endpoint. Reuses the existing verify_password/get_password_hash
+    helpers from core/security.py unchanged — does not modify how login,
+    signup, or JWT issuance work in any way."""
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    db.commit()
+    return {"ok": True}

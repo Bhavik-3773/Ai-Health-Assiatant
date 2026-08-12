@@ -124,3 +124,16 @@ CREATE TABLE system_logs (
     context JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- NEW: account-level settings (Dark Mode is intentionally NOT here — it's a
+-- device display preference kept in the browser's localStorage, not synced
+-- server-side). One row per user, created lazily on first access by
+-- GET/PUT /api/settings/me — see routers/settings.py.
+CREATE TABLE user_settings (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    language VARCHAR(10) NOT NULL DEFAULT 'en',
+    notify_emergency BOOLEAN NOT NULL DEFAULT TRUE,
+    notify_reminder BOOLEAN NOT NULL DEFAULT TRUE,
+    notify_info BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

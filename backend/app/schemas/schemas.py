@@ -31,6 +31,13 @@ class UserUpdate(BaseModel):
     full_name: str = Field(min_length=1, max_length=255)
 
 
+class PasswordChange(BaseModel):
+    """Used by POST /api/auth/change-password. new_password reuses the
+    same min_length=8 rule enforced at signup (see UserCreate.password)."""
+    current_password: str
+    new_password: str = Field(min_length=8)
+
+
 class UserOut(BaseModel):
     id: uuid.UUID
     email: EmailStr
@@ -167,10 +174,6 @@ class RecommendationOut(BaseModel):
 
 
 # ---------- Notifications ----------
-# NEW: added to bring GET /api/notifications in line with the response_model
-# convention already used by every other router (PredictionOut, RecommendationOut,
-# SensorDataOut, etc.). Mirrors the existing `notifications` table exactly —
-# no new columns, no schema change.
 
 class NotificationOut(BaseModel):
     id: int
@@ -183,3 +186,26 @@ class NotificationOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ---------- User Settings ----------
+# NEW. Backs GET/PUT /api/settings/me (routers/settings.py). Dark Mode is
+# NOT included here — it's a client-only localStorage preference.
+
+class UserSettingsOut(BaseModel):
+    user_id: uuid.UUID
+    language: str
+    notify_emergency: bool
+    notify_reminder: bool
+    notify_info: bool
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserSettingsUpdate(BaseModel):
+    language: Optional[str] = Field(default=None, max_length=10)
+    notify_emergency: Optional[bool] = None
+    notify_reminder: Optional[bool] = None
+    notify_info: Optional[bool] = None

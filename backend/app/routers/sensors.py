@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.config import settings
 from app.models.user import User
-from app.models.health import Patient, SensorData, Notification
+from app.models.health import Patient, SensorData, Notification, UserSettings
 from app.schemas.schemas import SensorDataCreate, SensorDataOut
 from app.ml.predictor import predict_health_state
 from app.ml.recommender import generate_recommendations
@@ -85,10 +85,20 @@ def _check_emergency(db: Session, patient: Patient, reading: SensorData):
     if reading.temperature is not None and reading.temperature > settings.TEMPERATURE_HIGH:
         alerts.append(f"High temperature: {reading.temperature}°C")
 
+    if not alerts:
+        return
+
+    # NEW: honor the user's Notification Preferences (Settings page) before
+    # writing emergency alerts. Defaults to enabled (True) when the user has
+    # no settings row yet, so existing behavior is unchanged for anyone who
+    # hasn't visited Settings.
+    user_settings = db.query(UserSettings).filter(UserSettings.user_id == patient.user_id).first()
+    if user_settings is not None and not user_settings.notify_emergency:
+        return
+
     for alert in alerts:
         db.add(Notification(user_id=patient.user_id, type="emergency", title="Emergency Alert", message=alert))
-    if alerts:
-        db.commit()
+    db.commit()
 
 
 def _run_prediction_pipeline(db: Session, patient: Patient, reading: SensorData):

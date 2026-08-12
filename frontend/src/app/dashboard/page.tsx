@@ -77,6 +77,12 @@ export default function DashboardPage() {
           >
             My Profile
           </Link>
+          <Link
+            href="/settings"
+            className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
+          >
+            Settings
+          </Link>
         </div>
       </div>
 
