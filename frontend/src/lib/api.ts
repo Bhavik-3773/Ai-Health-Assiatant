@@ -1,6 +1,7 @@
 import axios from "axios";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_URL = 
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export const api = axios.create({ baseURL: API_URL });
 
@@ -97,9 +98,10 @@ export async function uploadMyPatientPhoto(file: File): Promise<PatientProfile> 
   return data;
 }
 
+export type TimeRange = "24h" | "7d" | "30d";
 export async function getSensorHistoryPage(
   patientId: string,
-  params: { limit?: number; offset?: number; range?: "24h" | "7d" | "30d"; date?: string }
+  params: { limit?: number; offset?: number; range?: TimeRange; date?: string }
 ) {
   const response = await api.get(`/api/sensors/${patientId}`, { params });
   const total = Number(response.headers["x-total-count"] ?? response.data.length);
