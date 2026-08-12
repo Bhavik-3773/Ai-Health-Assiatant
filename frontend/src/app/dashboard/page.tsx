@@ -64,6 +64,12 @@ export default function DashboardPage() {
             Prediction
           </Link>
           <Link
+            href="/recommendations"
+            className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
+          >
+            Recommendations
+          </Link>
+          <Link
             href="/profile"
             className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
           >

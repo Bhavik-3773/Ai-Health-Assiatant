@@ -51,8 +51,12 @@ export async function getPredictions(patientId: string, limit = 20, offset = 0):
   return data;
 }
 
-export async function getRecommendations(patientId: string, limit = 20) {
-  const { data } = await api.get(`/api/recommendations/${patientId}`, { params: { limit } });
+export async function getRecommendations(
+  patientId: string,
+  limit = 50,
+  offset = 0
+): Promise<Recommendation[]> {
+  const { data } = await api.get(`/api/recommendations/${patientId}`, { params: { limit, offset } });
   return data;
 }
 
@@ -164,5 +168,15 @@ export type Prediction = {
   label: string;
   probability: number;
   explanation: string | null;
+  created_at: string;
+};
+
+// ---------- AI Recommendations ----------
+
+export type Recommendation = {
+  id: number;
+  patient_id: string;
+  title: string;
+  body: string;
   created_at: string;
 };
