@@ -37,6 +37,11 @@ export async function getMe() {
   return data;
 }
 
+export async function updateMyName(full_name: string) {
+  const { data } = await api.put("/api/auth/me", { full_name });
+  return data;
+}
+
 export async function getMyPatientProfile() {
   const { data } = await api.get("/api/patients/me");
   return data as PatientProfile;
@@ -96,6 +101,10 @@ export async function uploadMyPatientPhoto(file: File): Promise<PatientProfile> 
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data;
+}
+
+export async function uploadProfilePhoto(file: File): Promise<PatientProfile> {
+  return uploadMyPatientPhoto(file);
 }
 
 export type TimeRange = "24h" | "7d" | "30d";
