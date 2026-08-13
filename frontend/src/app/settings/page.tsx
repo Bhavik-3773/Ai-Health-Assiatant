@@ -424,7 +424,7 @@ export default function SettingsPage() {
               >
                 <input className="input" {...contactForm.register("emergency_contact_phone")} />
               </FormField>
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -434,14 +434,14 @@ export default function SettingsPage() {
                     });
                     setContactEditing(false);
                   }}
-                  className="px-5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={contactSaving}
-                  className="px-5 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
                 >
                   {contactSaving ? "Saving..." : "Save"}
                 </button>

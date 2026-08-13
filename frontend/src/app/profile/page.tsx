@@ -419,18 +419,18 @@ export default function ProfilePage() {
         </div>
 
         {editing && (
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={handleCancel}
-              className="px-5 py-2.5 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>

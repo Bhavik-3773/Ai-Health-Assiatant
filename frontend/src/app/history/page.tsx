@@ -139,12 +139,12 @@ export default function HistoryPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
       <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 mb-6">
         <ArrowLeft className="w-4 h-4" /> Back to Dashboard
       </Link>
 
-      <h1 className="text-3xl font-bold mb-6">Sensor History</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Sensor History</h1>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -193,7 +193,7 @@ export default function HistoryPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <ChartCard title="Heart Rate (bpm)" data={chartData} dataKey="heart_rate" color="#dc2626" loading={chartLoading} />
         <ChartCard title="SpO2 (%)" data={chartData} dataKey="spo2" color="#2563eb" loading={chartLoading} />
         <ChartCard title="Temperature (°C)" data={chartData} dataKey="temperature" color="#d97706" loading={chartLoading} />
@@ -202,7 +202,7 @@ export default function HistoryPage() {
       {/* Table */}
       <div className="bg-white rounded-xl border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[560px] text-sm">
             <thead className="bg-slate-50 text-slate-500 text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">Timestamp</th>
@@ -239,11 +239,11 @@ export default function HistoryPage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3 border-t bg-slate-50 text-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t bg-slate-50 text-sm">
           <span className="text-slate-500">
             {total === 0 ? "0 results" : `${total} result${total === 1 ? "" : "s"}`}
           </span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-3">
             <button
               type="button"
               disabled={page <= 1 || tableLoading}
