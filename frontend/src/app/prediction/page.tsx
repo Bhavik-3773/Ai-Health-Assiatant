@@ -108,7 +108,12 @@ export default function PredictionPage() {
   useEffect(() => {
     async function init() {
       try {
-        await getMe();
+        const me = await getMe();
+        // NEW (Doctor Dashboard role protection): see dashboard/page.tsx.
+        if (me.role !== "patient") {
+          router.push("/doctor");
+          return;
+        }
         const patient = await getMyPatientProfile();
         setPatientId(patient.id);
         const first = await getPredictions(patient.id, PAGE_SIZE, 0);

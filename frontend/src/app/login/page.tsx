@@ -16,8 +16,11 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login({ email, password });
-      router.push("/dashboard");
+      const data = await login({ email, password });
+      // NEW (Doctor Dashboard): route by role instead of always going to
+      // the patient dashboard. Patient/admin behavior is unchanged (still
+      // /dashboard) — only "doctor" is new.
+      router.push(data.user.role === "doctor" ? "/doctor" : "/dashboard");
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Login failed");
     } finally {

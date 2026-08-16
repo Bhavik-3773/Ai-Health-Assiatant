@@ -112,6 +112,23 @@ class PatientOut(BaseModel):
     emergency_contact_phone: Optional[str]
     photo_url: Optional[str]
 
+    # ---------- NEW (Doctor Dashboard) ----------
+    # Populated only by routers/patients.py's doctor/admin-facing endpoints
+    # (list_patients with include_status=True, get_patient, get_patients_overview's
+    # patient briefs use a separate lighter schema instead). Every existing
+    # caller (GET/PUT /api/patients/me, the photo upload route) never sets
+    # these, so they stay at their defaults below and the response these
+    # callers return is unchanged.
+    full_name: Optional[str] = None
+    latest_heart_rate: Optional[float] = None
+    latest_spo2: Optional[float] = None
+    latest_temperature: Optional[float] = None
+    latest_activity_state: Optional[str] = None
+    latest_reading_at: Optional[datetime] = None
+    latest_prediction_label: Optional[str] = None
+    latest_prediction_probability: Optional[float] = None
+    unread_alert_count: int = 0
+
     class Config:
         from_attributes = True
 
@@ -209,3 +226,53 @@ class UserSettingsUpdate(BaseModel):
     notify_emergency: Optional[bool] = None
     notify_reminder: Optional[bool] = None
     notify_info: Optional[bool] = None
+
+
+# ---------- Doctor Dashboard ----------
+# NEW. Backs GET /api/patients/overview (routers/patients.py). No existing
+# schema/endpoint can safely provide this cross-patient aggregation, so
+# this is a genuinely new response shape rather than a duplicate of
+# PatientOut/PredictionOut/etc.
+
+class PatientBrief(BaseModel):
+    """Minimal patient identity attached to each overview activity row —
+    intentionally not the full PatientOut (that's a heavier query per row
+    the overview screen doesn't need)."""
+    id: uuid.UUID
+    full_name: str
+    device_id: Optional[str] = None
+
+
+class AlertActivityOut(BaseModel):
+    id: int
+    patient: PatientBrief
+    type: str
+    title: str
+    message: str
+    created_at: datetime
+
+
+class PredictionActivityOut(BaseModel):
+    id: int
+    patient: PatientBrief
+    label: str
+    probability: float
+    created_at: datetime
+
+
+class SensorActivityOut(BaseModel):
+    id: int
+    patient: PatientBrief
+    heart_rate: Optional[float]
+    spo2: Optional[float]
+    temperature: Optional[float]
+    activity_state: Optional[str]
+    recorded_at: datetime
+
+
+class DoctorOverviewOut(BaseModel):
+    total_patients: int
+    attention_count: int
+    recent_alerts: list[AlertActivityOut]
+    recent_predictions: list[PredictionActivityOut]
+    recent_activity: list[SensorActivityOut]

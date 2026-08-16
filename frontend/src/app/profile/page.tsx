@@ -144,6 +144,11 @@ export default function ProfilePage() {
     async function load() {
       try {
         const me = await getMe();
+        // NEW (Doctor Dashboard role protection): see dashboard/page.tsx.
+        if (me.role !== "patient") {
+          router.push("/doctor");
+          return;
+        }
         const profile = await getMyPatientProfile();
         setEmail(me.email);
         setPatient(profile);

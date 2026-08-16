@@ -104,7 +104,12 @@ export default function SettingsPage() {
   useEffect(() => {
     async function load() {
       try {
-        await getMe();
+        const me = await getMe();
+        // NEW (Doctor Dashboard role protection): see dashboard/page.tsx.
+        if (me.role !== "patient") {
+          router.push("/doctor");
+          return;
+        }
         const [profile, mySettings] = await Promise.all([getMyPatientProfile(), getMySettings()]);
         setPatient(profile);
         setAccountSettings(mySettings);

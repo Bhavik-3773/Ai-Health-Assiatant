@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
+from app.models.health import Patient
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -78,3 +79,20 @@ def require_role(*roles: str):
         return user
 
     return dependency
+
+
+def can_access_patient(user: User, patient: Patient) -> bool:
+    """NEW (Doctor Dashboard). Shared ownership check reused by every route
+    that reads data scoped to a single patient_id (sensors/predictions/
+    recommendations/notifications) — a patient may only access their own
+    record, a doctor only patients assigned to them via Patient.doctor_id,
+    and an admin may access any patient. Centralized here (rather than
+    duplicated per router) so all of those routes enforce the exact same
+    rule."""
+    if user.role == "admin":
+        return True
+    if user.role == "doctor":
+        return patient.doctor_id == user.id
+    if user.role == "patient":
+        return patient.user_id == user.id
+    return False

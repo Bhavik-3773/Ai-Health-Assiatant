@@ -15,8 +15,9 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
     try {
-      await signup(form);
-      router.push("/dashboard");
+      const data = await signup(form);
+      // NEW (Doctor Dashboard): same role-based routing as the login page.
+      router.push(data.user.role === "doctor" ? "/doctor" : "/dashboard");
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Signup failed");
     } finally {

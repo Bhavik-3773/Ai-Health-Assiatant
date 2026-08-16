@@ -120,7 +120,12 @@ export default function RecommendationsPage() {
   useEffect(() => {
     async function load() {
       try {
-        await getMe();
+        const me = await getMe();
+        // NEW (Doctor Dashboard role protection): see dashboard/page.tsx.
+        if (me.role !== "patient") {
+          router.push("/doctor");
+          return;
+        }
         const patient = await getMyPatientProfile();
         const data = await getRecommendations(patient.id, 100);
         setRecommendations(data);

@@ -87,10 +87,38 @@ export type PatientProfile = {
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   photo_url: string | null;
+  // NEW (Doctor Dashboard). Only populated by the doctor/admin-facing
+  // endpoints (getDoctorPatients with includeStatus, getPatientById) —
+  // undefined/null for the patient's own /me profile, mirroring the
+  // backend's PatientOut extension.
+  full_name?: string | null;
+  latest_heart_rate?: number | null;
+  latest_spo2?: number | null;
+  latest_temperature?: number | null;
+  latest_activity_state?: string | null;
+  latest_reading_at?: string | null;
+  latest_prediction_label?: string | null;
+  latest_prediction_probability?: number | null;
+  unread_alert_count?: number;
 };
 
 export type PatientProfileUpdate = Partial<
-  Omit<PatientProfile, "id" | "user_id" | "age" | "photo_url">
+  Omit<
+    PatientProfile,
+    | "id"
+    | "user_id"
+    | "age"
+    | "photo_url"
+    | "full_name"
+    | "latest_heart_rate"
+    | "latest_spo2"
+    | "latest_temperature"
+    | "latest_activity_state"
+    | "latest_reading_at"
+    | "latest_prediction_label"
+    | "latest_prediction_probability"
+    | "unread_alert_count"
+  >
 >;
 
 export async function updateMyPatientProfile(payload: PatientProfileUpdate): Promise<PatientProfile> {
@@ -170,8 +198,13 @@ export type NotificationItem = {
   created_at: string;
 };
 
-export async function getNotifications(unreadOnly = false): Promise<NotificationItem[]> {
-  const { data } = await api.get("/api/notifications", { params: { unread_only: unreadOnly } });
+export async function getNotifications(
+  unreadOnly = false,
+  patientId?: string
+): Promise<NotificationItem[]> {
+  const { data } = await api.get("/api/notifications", {
+    params: { unread_only: unreadOnly, patient_id: patientId },
+  });
   return data;
 }
 
@@ -208,5 +241,80 @@ export async function getMySettings(): Promise<UserSettingsData> {
 
 export async function updateMySettings(payload: UserSettingsUpdate): Promise<UserSettingsData> {
   const { data } = await api.put("/api/settings/me", payload);
+  return data;
+}
+
+// ---------- Doctor Dashboard ----------
+// NEW. Consumes the doctor/admin-facing endpoints in routers/patients.py
+// (existing GET /api/patients, GET /api/patients/{id}, extended; plus the
+// new GET /api/patients/overview). getMyPatientProfile/getSensorHistory/
+// getPredictions/getRecommendations/getNotifications above are all reused
+// as-is by the doctor patient-detail page — no duplicate versions of those.
+
+export async function getDoctorPatients(params?: {
+  search?: string;
+  limit?: number;
+  offset?: number;
+  includeStatus?: boolean;
+}): Promise<PatientProfile[]> {
+  const { data } = await api.get("/api/patients", {
+    params: {
+      search: params?.search,
+      limit: params?.limit,
+      offset: params?.offset,
+      include_status: params?.includeStatus ?? true,
+    },
+  });
+  return data;
+}
+
+export async function getPatientById(patientId: string): Promise<PatientProfile> {
+  const { data } = await api.get(`/api/patients/${patientId}`);
+  return data;
+}
+
+export type PatientBrief = {
+  id: string;
+  full_name: string;
+  device_id: string | null;
+};
+
+export type AlertActivity = {
+  id: number;
+  patient: PatientBrief;
+  type: NotificationType;
+  title: string;
+  message: string;
+  created_at: string;
+};
+
+export type PredictionActivity = {
+  id: number;
+  patient: PatientBrief;
+  label: string;
+  probability: number;
+  created_at: string;
+};
+
+export type SensorActivity = {
+  id: number;
+  patient: PatientBrief;
+  heart_rate: number | null;
+  spo2: number | null;
+  temperature: number | null;
+  activity_state: string | null;
+  recorded_at: string;
+};
+
+export type DoctorOverview = {
+  total_patients: number;
+  attention_count: number;
+  recent_alerts: AlertActivity[];
+  recent_predictions: PredictionActivity[];
+  recent_activity: SensorActivity[];
+};
+
+export async function getPatientsOverview(): Promise<DoctorOverview> {
+  const { data } = await api.get("/api/patients/overview");
   return data;
 }

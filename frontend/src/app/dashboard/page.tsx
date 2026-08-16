@@ -23,7 +23,15 @@ export default function DashboardPage() {
   useEffect(() => {
     async function load() {
       try {
-        await getMe();
+        const me = await getMe();
+        // NEW (Doctor Dashboard role protection): a doctor has no Patient
+        // row, so getMyPatientProfile() below would 404 and this page would
+        // dump them to /login via the catch block. Redirect them to their
+        // own dashboard instead. Patient behavior is completely unchanged.
+        if (me.role !== "patient") {
+          router.push("/doctor");
+          return;
+        }
         const patient = await getMyPatientProfile();
         const [history, preds, recs] = await Promise.all([
           getSensorHistory(patient.id, 50),

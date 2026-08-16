@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, can_access_patient
 from app.core.config import settings
 from app.models.user import User
 from app.models.health import Patient, SensorData, Notification, UserSettings
@@ -136,6 +136,15 @@ def get_sensor_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # NEW (Doctor Dashboard security requirement): previously any
+    # authenticated user could pass any patient_id here. Now a patient may
+    # only view their own history, a doctor only their assigned patients
+    # (Patient.doctor_id), and an admin any patient — same shared rule used
+    # by patients.py and predictions.py.
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient or not can_access_patient(current_user, patient):
+        raise HTTPException(status_code=404, detail="Patient not found")
+
     query = db.query(SensorData).filter(SensorData.patient_id == patient_id)
 
     if on_date is not None:

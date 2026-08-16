@@ -58,7 +58,12 @@ export default function HistoryPage() {
   useEffect(() => {
     async function init() {
       try {
-        await getMe();
+        const me = await getMe();
+        // NEW (Doctor Dashboard role protection): see dashboard/page.tsx.
+        if (me.role !== "patient") {
+          router.push("/doctor");
+          return;
+        }
         const patient = await getMyPatientProfile();
         setPatientId(patient.id);
       } catch {

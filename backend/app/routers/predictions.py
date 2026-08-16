@@ -1,13 +1,13 @@
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, can_access_patient
 from app.models.user import User
-from app.models.health import Prediction, Recommendation, Notification
+from app.models.health import Prediction, Recommendation, Notification, Patient
 from app.schemas.schemas import PredictionOut, RecommendationOut, NotificationOut
 
 router = APIRouter(prefix="/api", tags=["predictions"])
@@ -21,6 +21,12 @@ def get_predictions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # NEW (Doctor Dashboard security requirement): same ownership rule as
+    # GET /api/sensors/{patient_id} and GET /api/patients/{patient_id}.
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient or not can_access_patient(current_user, patient):
+        raise HTTPException(status_code=404, detail="Patient not found")
+
     return (
         db.query(Prediction)
         .filter(Prediction.patient_id == patient_id)
@@ -39,6 +45,12 @@ def get_recommendations(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # NEW (Doctor Dashboard security requirement): same ownership rule as
+    # the sibling read routes above.
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient or not can_access_patient(current_user, patient):
+        raise HTTPException(status_code=404, detail="Patient not found")
+
     return (
         db.query(Recommendation)
         .filter(Recommendation.patient_id == patient_id)
@@ -52,10 +64,27 @@ def get_recommendations(
 @router.get("/notifications", response_model=List[NotificationOut])
 def get_notifications(
     unread_only: bool = False,
+    patient_id: Optional[str] = Query(
+        default=None,
+        description=(
+            "NEW (Doctor Dashboard). Doctor/admin only: view a specific "
+            "patient's own notifications (e.g. emergency alerts) instead of "
+            "the caller's own. Ignored for the patient role and when unset, "
+            "so every existing caller keeps getting exactly their own "
+            "notifications exactly as before."
+        ),
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+    target_user_id = current_user.id
+    if patient_id is not None and current_user.role in ("doctor", "admin"):
+        patient = db.query(Patient).filter(Patient.id == patient_id).first()
+        if not patient or not can_access_patient(current_user, patient):
+            raise HTTPException(status_code=404, detail="Patient not found")
+        target_user_id = patient.user_id
+
+    query = db.query(Notification).filter(Notification.user_id == target_user_id)
     if unread_only:
         query = query.filter(Notification.is_read.is_(False))
     return query.order_by(desc(Notification.created_at)).limit(100).all()

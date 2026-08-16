@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
-const NAV_LINKS = [
+const PATIENT_LINKS = [
   { href: "/history", label: "History" },
   { href: "/prediction", label: "Prediction" },
   { href: "/recommendations", label: "Recommendations" },
@@ -13,21 +13,34 @@ const NAV_LINKS = [
   { href: "/settings", label: "Settings" },
 ];
 
+// NEW (Doctor Dashboard). Doctors don't have a Patient row, so the
+// patient-only links above (Profile/Settings/History/etc., all backed by
+// /api/patients/me) don't apply to them — this is a separate, smaller link
+// set rather than reusing PATIENT_LINKS.
+const DOCTOR_LINKS = [
+  { href: "/doctor", label: "Overview" },
+  { href: "/doctor/patients", label: "Patients" },
+];
+
 // Responsive nav row used on the dashboard header. On md+ screens this
 // renders the same horizontal row of links + bell that dashboard/page.tsx
 // used to render inline. Below md, the links collapse into a toggleable
 // dropdown panel behind a hamburger button so the row never overflows or
-// wraps awkwardly on narrow (tablet/mobile) screens. No new links, colors,
-// or behavior were added — this only changes how the existing nav row
-// lays out at small widths.
-export default function Navbar() {
+// wraps awkwardly on narrow (tablet/mobile) screens.
+//
+// `role` is NEW and optional (Doctor Dashboard): omitting it (every
+// existing call site) preserves the exact original patient link set and
+// behavior; pass role="doctor" from the new doctor pages to get the
+// doctor-appropriate links instead.
+export default function Navbar({ role }: { role?: "patient" | "doctor" | "admin" }) {
   const [open, setOpen] = useState(false);
+  const links = role === "doctor" ? DOCTOR_LINKS : PATIENT_LINKS;
 
   return (
     <div className="relative flex items-center gap-3">
       {/* Full link row: visible md and up */}
       <div className="hidden md:flex items-center gap-3">
-        {NAV_LINKS.map((link) => (
+        {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -54,7 +67,7 @@ export default function Navbar() {
       {/* Collapsible mobile menu panel */}
       {open && (
         <div className="md:hidden absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-20">
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
