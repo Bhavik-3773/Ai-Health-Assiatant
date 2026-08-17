@@ -18,6 +18,8 @@ to simulate an assignment, exactly as an admin would need to do today
 through direct DB access until an assignment endpoint exists.
 """
 import os
+from uuid import UUID
+
 os.environ["DATABASE_URL"] = "sqlite:///./test_doctor.db"
 
 import pytest
@@ -77,7 +79,9 @@ def _assign_patient_to_doctor(patient_email: str, doctor_headers: dict):
 
         patient_user = db.query(User).filter(User.email == patient_email).first()
         patient = db.query(Patient).filter(Patient.user_id == patient_user.id).first()
-        patient.doctor_id = me["id"]
+        
+        patient.doctor_id = UUID(me["id"])
+
         db.commit()
         return str(patient.id)
     finally:
