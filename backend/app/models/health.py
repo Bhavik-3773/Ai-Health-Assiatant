@@ -43,7 +43,11 @@ class Doctor(Base):
 class SensorData(Base):
     __tablename__ = "sensor_data"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True
+    )
     patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
     heart_rate = Column(Numeric(5, 2))
     spo2 = Column(Numeric(5, 2))
@@ -61,7 +65,11 @@ class SensorData(Base):
 class Prediction(Base):
     __tablename__ = "predictions"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True
+    )
     patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
     sensor_data_id = Column(BigInteger, ForeignKey("sensor_data.id"))
     label = Column(String(50), nullable=False)
@@ -73,7 +81,11 @@ class Prediction(Base):
 class Recommendation(Base):
     __tablename__ = "recommendations"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True
+    )
     patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
     prediction_id = Column(BigInteger, ForeignKey("predictions.id"))
     title = Column(String(255), nullable=False)
@@ -84,7 +96,11 @@ class Recommendation(Base):
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True
+    )
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     type = Column(String(20), nullable=False, default="info")
     title = Column(String(255), nullable=False)

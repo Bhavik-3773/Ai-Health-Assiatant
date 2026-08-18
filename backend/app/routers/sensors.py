@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 from typing import List, Optional
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -123,7 +124,7 @@ def _run_prediction_pipeline(db: Session, patient: Patient, reading: SensorData)
 
 @router.get("/{patient_id}", response_model=List[SensorDataOut])
 def get_sensor_history(
-    patient_id: str,
+    patient_id: uuid.UUID,
     response: Response,
     limit: int = Query(default=100, le=1000),
     offset: int = 0,

@@ -1,4 +1,5 @@
 from typing import List, Optional
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/api", tags=["predictions"])
 
 @router.get("/predictions/{patient_id}", response_model=List[PredictionOut])
 def get_predictions(
-    patient_id: str,
+    patient_id: uuid.UUID,
     limit: int = Query(default=50, le=500),
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -39,7 +40,7 @@ def get_predictions(
 
 @router.get("/recommendations/{patient_id}", response_model=List[RecommendationOut])
 def get_recommendations(
-    patient_id: str,
+    patient_id: uuid.UUID,
     limit: int = Query(default=50, le=500),
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -64,7 +65,7 @@ def get_recommendations(
 @router.get("/notifications", response_model=List[NotificationOut])
 def get_notifications(
     unread_only: bool = False,
-    patient_id: Optional[str] = Query(
+    patient_id: Optional[uuid.UUID] = Query(
         default=None,
         description=(
             "NEW (Doctor Dashboard). Doctor/admin only: view a specific "

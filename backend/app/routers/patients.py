@@ -1,6 +1,7 @@
 from datetime import date
 from pathlib import Path
 from typing import List, Optional
+import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import desc
@@ -363,7 +364,7 @@ def get_patients_overview(
 
 @router.get("/{patient_id}", response_model=PatientOut)
 def get_patient(
-    patient_id: str,
+    patient_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin", "doctor")),
 ):

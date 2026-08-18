@@ -9,6 +9,7 @@ entirely.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import uuid
 
 import bcrypt
 from jose import jwt, JWTError
@@ -66,7 +67,18 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    user = db.query(User).filter(User.id == user_id).first()
+    # FIX (root cause): JWT claims are always strings, but User.id is a
+    # postgresql.UUID(as_uuid=True) column. Filtering it with a plain str
+    # works on real PostgreSQL (psycopg2 adapts strings natively) but
+    # raises AttributeError: 'str' object has no attribute 'hex' when the
+    # app runs on SQLite, as the test suite does. Converting to a real
+    # uuid.UUID here makes this correct on both backends; a malformed sub
+    # (e.g. a tampered token) now cleanly 401s instead of crashing.
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    user = db.query(User).filter(User.id == user_uuid).first()
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
     return user

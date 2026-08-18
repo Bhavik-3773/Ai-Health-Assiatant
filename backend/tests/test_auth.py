@@ -21,14 +21,29 @@ def override_get_db():
         db.close()
 
 
-app.dependency_overrides[get_db] = override_get_db
-
-
 @pytest.fixture(autouse=True, scope="module")
 def setup_db():
+    # FIX: app.dependency_overrides is a plain dict on the shared FastAPI
+    # `app` singleton — the same object every test module imports via
+    # `from app.main import app`. Setting this key at bare module level
+    # (as it was before) runs during pytest's *collection* phase, which
+    # imports every test file before any test executes. Since
+    # test_doctor_dashboard.py is collected after this file (alphabetical
+    # order) and does the identical bare assignment, its override silently
+    # replaced this one for the whole session — so these tests were
+    # unknowingly running against test_doctor_dashboard.py's (not yet
+    # created) database. Moving the assignment into this fixture's
+    # setup/teardown scopes it correctly to exactly this module's tests,
+    # regardless of collection order.
+    app.dependency_overrides[get_db] = override_get_db
     Base.metadata.create_all(bind=engine)
     yield
+    app.dependency_overrides.pop(get_db, None)
     Base.metadata.drop_all(bind=engine)
+    # FIX: same Windows file-lock cleanup already applied to
+    # test_doctor_dashboard.py — dispose() releases the OS-level file
+    # handle SQLAlchemy's pool still holds; drop_all() alone doesn't.
+    engine.dispose()
     if os.path.exists("./test.db"):
         os.remove("./test.db")
 

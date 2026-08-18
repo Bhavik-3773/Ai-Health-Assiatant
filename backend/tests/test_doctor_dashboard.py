@@ -18,10 +18,9 @@ to simulate an assignment, exactly as an admin would need to do today
 through direct DB access until an assignment endpoint exists.
 """
 import os
-from uuid import UUID
-
 os.environ["DATABASE_URL"] = "sqlite:///./test_doctor.db"
 
+import uuid
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -43,14 +42,26 @@ def override_get_db():
         db.close()
 
 
-app.dependency_overrides[get_db] = override_get_db
-
-
 @pytest.fixture(autouse=True, scope="module")
 def setup_db():
+    # FIX: see test_auth.py for the full explanation — this bare
+    # module-level assignment (it used to sit right here, outside any
+    # fixture) ran during pytest's collection phase and, since this file
+    # is collected after test_auth.py, silently overwrote test_auth.py's
+    # override on the shared `app` singleton for the rest of the whole
+    # session. Moving it into this fixture's setup/teardown scopes it
+    # correctly to just this module's tests.
+    app.dependency_overrides[get_db] = override_get_db
     Base.metadata.create_all(bind=engine)
     yield
+    app.dependency_overrides.pop(get_db, None)
     Base.metadata.drop_all(bind=engine)
+    # FIX: engine.dispose() closes every pooled connection, releasing the
+    # OS-level file handle SQLAlchemy holds open on the SQLite file. On
+    # Windows, skipping this leaves the file locked and os.remove() raises
+    # PermissionError: [WinError 32]. drop_all() alone does not release the
+    # handle — it only clears tables through the still-open connection.
+    engine.dispose()
     if os.path.exists("./test_doctor.db"):
         os.remove("./test_doctor.db")
 
@@ -79,9 +90,10 @@ def _assign_patient_to_doctor(patient_email: str, doctor_headers: dict):
 
         patient_user = db.query(User).filter(User.email == patient_email).first()
         patient = db.query(Patient).filter(Patient.user_id == patient_user.id).first()
-        
-        patient.doctor_id = UUID(me["id"])
-
+        # FIX: me["id"] is a JSON string; Patient.doctor_id is a
+        # postgresql.UUID(as_uuid=True) column, same root cause as
+        # get_current_user() — convert before assigning/committing.
+        patient.doctor_id = uuid.UUID(me["id"])
         db.commit()
         return str(patient.id)
     finally:
@@ -215,4 +227,3 @@ def test_login_redirect_role_present_in_response():
     resp = client.post("/api/auth/login", json={"email": "roletest@example.com", "password": "Password123"})
     assert resp.status_code == 200
     assert resp.json()["user"]["role"] == "doctor"
-
